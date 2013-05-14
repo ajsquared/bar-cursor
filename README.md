@@ -6,7 +6,7 @@ color-theme-x is an Emacs Lisp package that changes the Emacs cursor
 from a block into a bar.  In overwrite-mode, the cursor will change
 into a block.
 
-I forked color-theme-x from the file by Joseph L. Casadonte Jr. found on
+I forked bar-cursor from the file by Joseph L. Casadonte Jr. found on
 [his webpage](http://www.northbound-train.com/emacs.html#MyPackages).
 
 ## Installation ##
