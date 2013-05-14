@@ -1,4 +1,4 @@
-;;; bar-cursor.el -- package used to switch block cursor to a bar
+;;; bar-cursor.el --- package used to switch block cursor to a bar
 ;;; $Id: bar-cursor.el,v 1.1 2001/07/10 00:18:40 jcasa Exp $
 
 ;; This file is not part of Emacs
