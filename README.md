@@ -7,8 +7,7 @@ from a block into a bar.  In overwrite-mode, the cursor will change
 into a block.
 
 I forked color-theme-x from the file by Joseph L. Casadonte Jr. found on
-[his webpage](http://www.northbound-train.com/emacs.html#MyPackages) because I
-had some problems with getting it to work consistently.
+[his webpage](http://www.northbound-train.com/emacs.html#MyPackages).
 
 ## Installation ##
 
