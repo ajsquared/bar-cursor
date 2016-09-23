@@ -1,5 +1,4 @@
 ;;; bar-cursor.el --- package used to switch block cursor to a bar
-;;; $Id: bar-cursor.el,v 1.1 2001/07/10 00:18:40 jcasa Exp $
 
 ;; This file is not part of Emacs
 
@@ -8,9 +7,9 @@
 ;; Author:          Joe Casadonte (emacs@northbound-train.com)
 ;; Maintainer:      Andrew Johnson (andrew@andrewjamesjohnson.com)
 ;; Created:         July 1, 2001
-;; Keywords:        bar cursor overwrite
-;; URL: http://www.northbound-train.com/emacs.html
-;; Version: 1.1
+;; Keywords:        files
+;; URL: https://github.com/ajsquared/bar-cursor
+;; Version: 2.0
 
 ;; COPYRIGHT NOTICE
 
@@ -33,30 +32,24 @@
 ;;
 ;;  Simple package to convert the block cursor into a bar cursor.  In
 ;;  overwrite mode, the bar cursor changes back into a block cursor.
-;;  This is a quasi-minor mode, meaning that it can be turned on & off
-;;  easily though only globally (hence the quasi-)
+;;  This is a global minor mode.
 
 ;;; Installation:
 ;;
-;;  Put this file on your Emacs-Lisp load path and add the following to
-;;  your ~/.emacs startup file
+;; 1. Place bar-cursor.el somewhere on your Emacs load path.
+;; 2. Add (require 'bar-cursor) to your .emacs
+;; 3. Add (bar-cursor-mode 1) to your .emacs
 ;;
-;;     (require 'bar-cursor)
-;;     (bar-cursor-mode 1)
-;;
-;;  To add a directory to your load-path, use something like the following:
-;;
-;;      (add-to-list 'load-path (expand-file-name "/some/load/path"))
+;; bar-cursor.el is also available in Melpa.  See
+;; https://github.com/melpa/melpa#usage for information on using
+;; Melpa.  Then you can run M-x package-install bar-cursor to install
+;; it.
 
 ;;; Usage:
 ;;
 ;;  M-x `bar-cursor-mode'
 ;;      Toggles bar-cursor-mode on & off.  Optional arg turns
 ;;      bar-cursor-mode on iff arg is a positive integer.
-
-;;; To Do:
-;;
-;;  o Nothing, at the moment.
 
 ;;; Credits:
 ;;
@@ -65,113 +58,55 @@
 
 ;;; Comments:
 ;;
-;;  Any comments, suggestions, bug reports or upgrade requests are welcome.
-;;  Please send them to Joe Casadonte (emacs@northbound-train.com).
-;;
-;;  This version of bar-cursor was developed and tested with NTEmacs
-;;  20.7.1 under Windows 2000 & NT 4.0 and Emacs 20.7.1 under Linux
-;;  (RH7).  Please, let me know if it works with other OS and versions
-;;  of Emacs.
+;;  Any comments, suggestions, bug reports or upgrade requests are
+;;  welcome.  Please create issues or send pull requests via Github at
+;;  https://github.com/ajsquared/bar-cursor.
 
 ;;; Change Log:
 ;;
-;;  see http://www.northbound-train.com/emacs/bar-cursor.log
+;;  See https://github.com/ajsquared/bar-cursor/commits/master
 
-;;; **************************************************************************
-;;; **************************************************************************
-;;; **************************************************************************
-;;; **************************************************************************
-;;; **************************************************************************
 ;;; Code:
 
-(eval-when-compile
-  ;; silence the old byte-compiler
-  (defvar byte-compile-dynamic nil)
-  (set (make-local-variable 'byte-compile-dynamic) t))
-
 ;;; **************************************************************************
-;;; ***** version related routines
+;;; ***** mode definition
 ;;; **************************************************************************
-(defconst bar-cursor-version
-  "$Revision: 1.1 $"
-  "Version number for 'bar-cursor' package.")
 
-;; ---------------------------------------------------------------------------
-(defun bar-cursor-version-number ()
-  "Return 'bar-cursor' version number."
-  (string-match "[0123456789.]+" bar-cursor-version)
-  (match-string 0 bar-cursor-version))
-
-;; ---------------------------------------------------------------------------
-(defun bar-cursor-display-version ()
-  "Display 'bar-cursor' version."
-  (interactive)
-  (message "bar-cursor version <%s>." (bar-cursor-version-number)))
-
-;;; **************************************************************************
-;;; ***** real functions
-;;; **************************************************************************
-(defvar bar-cursor-mode nil "Non-nil if 'bar-cursor-mode' is enabled.")
-
-;;; --------------------------------------------------------------------------
 ;;;###autoload
-(defun bar-cursor-mode (&optional arg)
+(define-minor-mode bar-cursor-mode
   "Toggle use of 'bar-cursor-mode'.
 
-This quasi-minor mode changes cursor to a bar cursor in insert mode,
-and a block cursor in overwrite mode.  It may only be turned on and
-off globally, not on a per-buffer basis (hence the quasi- designation).
+This global minor mode changes cursor to a bar cursor in insert
+mode, and a block cursor in overwrite mode."
+  :lighter " bar"
+  :init-value nil
+  :keymap nil
+  :global t
 
-Optional ARG turns mode on iff ARG is a positive integer."
-  (interactive "P")
-
-  ;; toggle on and off
-  (let ((old-mode bar-cursor-mode))
-	(setq bar-cursor-mode
-		  (if arg (or (listp arg)
-					  (> (prefix-numeric-value arg) 0))
-			(not bar-cursor-mode)))
-
-	(when (not (equal old-mode bar-cursor-mode))
-	  ;; enable/disable advice
-	  (if bar-cursor-mode
-		  (ad-enable-advice 'overwrite-mode 'after 'bar-cursor-overwrite-mode-ad)
-		(ad-disable-advice 'overwrite-mode 'after 'bar-cursor-overwrite-mode-ad))
-
-	  (ad-activate 'overwrite-mode)
-
-	  ;; set the initial cursor type now
-	  (bar-cursor-set-cursor)
-
-	  ;; add or remove to frame hook
-	  (if bar-cursor-mode
-		  (add-hook 'after-make-frame-functions 'bar-cursor-set-cursor)
-		(remove-hook 'after-make-frame-functions 'bar-cursor-set-cursor))
-	  )))
-
-;;;--------------------------------------------------------------------------
-(defadvice overwrite-mode (after bar-cursor-overwrite-mode-ad disable)
-  "Advice that controls what type of cursor is displayed."
+  (add-hook 'overwrite-mode-hook 'bar-cursor-set-cursor)
+  (add-hook 'after-make-frame-functions 'bar-cursor-set-cursor)
   (bar-cursor-set-cursor))
 
-;;;--------------------------------------------------------------------------
+;;; **************************************************************************
+;;; ***** utility functions
+;;; **************************************************************************
+
 (defun bar-cursor-set-cursor-type (cursor &optional frame)
-  "Set the cursor-type for the named frame.
+  "Set the ‘cursor-type’ for the named frame.
 
 CURSOR is the name of the cursor to use (bar or block -- any others?).
 FRAME is optional frame to set the cursor for; current frame is used
 if not passed in."
   (interactive)
-  (if (not frame)
+  (unless frame
 	  (setq frame (selected-frame)))
 
   ;; Do the modification.
   (modify-frame-parameters frame
 	(list (cons 'cursor-type cursor))))
 
-;;; --------------------------------------------------------------------------
 (defun bar-cursor-set-cursor (&optional frame)
-  "Set the cursor-type according to the insertion mode.
+  "Set the ‘cursor-type’ according to the insertion mode.
 
 FRAME is optional frame to set the cursor for; current frame is used
 if not passed in."
